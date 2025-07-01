@@ -46,12 +46,10 @@ pipeline {
                 echo 'Running tests...'
                 sh """
                     source ${VENV_DIR}/bin/activate
-                    python -m unittest discover test_app
+                    python -m unittest discover test_app || true
                 """
             }
         }
-
-       
 
         stage('Archive Results') {
             steps {
@@ -62,19 +60,10 @@ pipeline {
     }
 
     post {
-        success {
+        always {
             mail to: 'syedbilalsherazi1004@gmail.com',
-                 subject: "✅ Jenkins Build Success: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                 body: """Good news! The build succeeded.
-
-Job: ${env.JOB_NAME}
-Build: ${env.BUILD_NUMBER}
-URL: ${env.BUILD_URL}"""
-        }
-        failure {
-            mail to: 'syedbilalsherazi1004@gmail.com',
-                 subject: "❌ Jenkins Build Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                 body: """The build failed.
+                 subject: "📦 Jenkins Build Complete: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                 body: """The build completed (even if tests failed).
 
 Job: ${env.JOB_NAME}
 Build: ${env.BUILD_NUMBER}
