@@ -2,7 +2,9 @@ pipeline {
     agent any
 
     environment {
+        REPO_DIR = "my-ci-app"
         VENV_DIR = "venv"
+        LOG_FILE = "flask.log"
     }
 
     stages {
@@ -14,19 +16,21 @@ pipeline {
 
         stage('Set Up Python Env') {
             steps {
-                sh """
-                    python3 -m venv ${VENV_DIR}
-                    source ${VENV_DIR}/bin/activate
-                    pip install --upgrade pip
-                    pip install -r requirements.txt
-                """
+                dir("${REPO_DIR}") {
+                    sh """
+                        python3 -m venv ../${VENV_DIR}
+                        source ../${VENV_DIR}/bin/activate
+                        pip install --upgrade pip
+                        pip install -r requirements.txt
+                    """
+                }
             }
         }
 
         stage('Kill Existing Flask App') {
             steps {
                 echo 'Stopping any previous Flask processes...'
-                sh "pkill -f app.py || true"
+                sh "pkill -f ${REPO_DIR}/app.py || true"
             }
         }
 
@@ -34,8 +38,9 @@ pipeline {
             steps {
                 echo 'Starting Flask server...'
                 sh """
-                    source ${VENV_DIR}/bin/activate
-                    nohup python app.py > flask.log 2>&1 &
+                    cd ${REPO_DIR}
+                    source ../${VENV_DIR}/bin/activate
+                    nohup python app.py > ../${LOG_FILE} 2>&1 &
                     sleep 5
                 """
             }
@@ -44,19 +49,20 @@ pipeline {
         stage('Run Selenium Tests') {
             steps {
                 echo 'Running Selenium tests against live app...'
-                // Even if tests fail, continue and mark stage and build as SUCCESS
                 catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
-                    sh """
-                        source ${VENV_DIR}/bin/activate
-                        python -m unittest discover test_app
-                    """
+                    dir("${REPO_DIR}") {
+                        sh """
+                            source ../${VENV_DIR}/bin/activate
+                            python -m unittest discover test_app
+                        """
+                    }
                 }
             }
         }
 
         stage('Archive Logs') {
             steps {
-                archiveArtifacts artifacts: 'flask.log', onlyIfSuccessful: false
+                archiveArtifacts artifacts: "${LOG_FILE}", onlyIfSuccessful: false
             }
         }
     }
