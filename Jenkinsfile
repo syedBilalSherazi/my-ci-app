@@ -14,33 +14,44 @@ pipeline {
 
         stage('Set Up Python Env') {
             steps {
-                sh '''
+                sh """
                     python3 -m venv ${VENV_DIR}
                     source ${VENV_DIR}/bin/activate
                     pip install --upgrade pip
                     pip install -r requirements.txt
-                '''
+                """
+            }
+        }
+
+        stage('Kill Existing Flask App') {
+            steps {
+                echo 'Stopping any previous Flask processes...'
+                sh "pkill -f app.py || true"
             }
         }
 
         stage('Start Flask App') {
             steps {
-                sh '''
+                echo 'Starting Flask server...'
+                sh """
                     source ${VENV_DIR}/bin/activate
                     nohup python app.py > flask.log 2>&1 &
                     sleep 5
-                '''
+                """
             }
         }
 
         stage('Run Selenium Tests') {
             steps {
-                sh '''
+                echo 'Running tests...'
+                sh """
                     source ${VENV_DIR}/bin/activate
-                    sh 'python -m unittest discover test_app'
-                '''
+                    python -m unittest discover test_app
+                """
             }
         }
+
+       
 
         stage('Archive Results') {
             steps {
