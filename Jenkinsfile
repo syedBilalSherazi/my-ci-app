@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     environment {
-        REPO_DIR = "my-ci-app"
         VENV_DIR = "venv"
+        REPO_DIR = "my-ci-app"
         LOG_FILE = "flask.log"
     }
 
@@ -29,18 +29,15 @@ pipeline {
 
         stage('Kill Existing Flask App') {
             steps {
-                echo 'Stopping any previous Flask processes...'
                 sh "pkill -f ${REPO_DIR}/app.py || true"
             }
         }
 
         stage('Start Flask App') {
             steps {
-                echo 'Starting Flask server...'
                 sh """
-                    cd ${REPO_DIR}
-                    source ../${VENV_DIR}/bin/activate
-                    nohup python app.py > ../${LOG_FILE} 2>&1 &
+                    source ${VENV_DIR}/bin/activate
+                    nohup python ${REPO_DIR}/app.py > ${LOG_FILE} 2>&1 &
                     sleep 5
                 """
             }
@@ -48,14 +45,11 @@ pipeline {
 
         stage('Run Selenium Tests') {
             steps {
-                echo 'Running Selenium tests against live app...'
                 catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
-                    dir("${REPO_DIR}") {
-                        sh """
-                            source ../${VENV_DIR}/bin/activate
-                            python -m unittest discover test_app
-                        """
-                    }
+                    sh """
+                        source ${VENV_DIR}/bin/activate
+                        python -m unittest discover ${REPO_DIR}/test_app
+                    """
                 }
             }
         }
