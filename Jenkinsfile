@@ -4,6 +4,8 @@ pipeline {
     environment {
         VENV_DIR = "venv"
         LOG_FILE = "flask.log"
+        PYTHON = "${VENV_DIR}/bin/python"
+        PIP = "${VENV_DIR}/bin/pip"
     }
 
     stages {
@@ -16,10 +18,9 @@ pipeline {
         stage('Set Up Python Env') {
             steps {
                 sh """
-                    python3 -m venv ${VENV_DIR}
-                    source ${VENV_DIR}/bin/activate
-                    pip install --upgrade pip
-                    pip install -r requirements.txt
+                    python3 -m venv ${VENV_DIR} && \
+                    ${PIP} install --upgrade pip && \
+                    ${PIP} install -r requirements.txt
                 """
             }
         }
@@ -27,7 +28,13 @@ pipeline {
         stage('Kill Existing Flask App') {
             steps {
                 echo 'Stopping any previous Flask processes...'
-                sh "pkill -f app.py || true"
+                sh """
+                    PIDS=$(pgrep -f "python app.py" || true)
+                    if [ ! -z "$PIDS" ]; then
+                        echo "Killing: \$PIDS"
+                        kill \$PIDS
+                    fi
+                """
             }
         }
 
@@ -35,8 +42,7 @@ pipeline {
             steps {
                 echo 'Starting Flask server...'
                 sh """
-                    source ${VENV_DIR}/bin/activate
-                    nohup python app.py > ${LOG_FILE} 2>&1 &
+                    nohup ${PYTHON} app.py > ${LOG_FILE} 2>&1 &
                     sleep 5
                 """
             }
@@ -46,10 +52,7 @@ pipeline {
             steps {
                 echo 'Running Selenium tests against live app...'
                 catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
-                    sh """
-                        source ${VENV_DIR}/bin/activate
-                        python -m unittest discover test_app
-                    """
+                    sh "${PYTHON} -m unittest discover test_app"
                 }
             }
         }
