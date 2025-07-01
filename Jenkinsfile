@@ -3,7 +3,6 @@ pipeline {
 
     environment {
         VENV_DIR = "venv"
-        REPO_DIR = "my-ci-app"
         LOG_FILE = "flask.log"
     }
 
@@ -16,28 +15,28 @@ pipeline {
 
         stage('Set Up Python Env') {
             steps {
-                dir("${REPO_DIR}") {
-                    sh """
-                        python3 -m venv ../${VENV_DIR}
-                        source ../${VENV_DIR}/bin/activate
-                        pip install --upgrade pip
-                        pip install -r requirements.txt
-                    """
-                }
+                sh """
+                    python3 -m venv ${VENV_DIR}
+                    source ${VENV_DIR}/bin/activate
+                    pip install --upgrade pip
+                    pip install -r requirements.txt
+                """
             }
         }
 
         stage('Kill Existing Flask App') {
             steps {
-                sh "pkill -f ${REPO_DIR}/app.py || true"
+                echo 'Stopping any previous Flask processes...'
+                sh "pkill -f app.py || true"
             }
         }
 
         stage('Start Flask App') {
             steps {
+                echo 'Starting Flask server...'
                 sh """
                     source ${VENV_DIR}/bin/activate
-                    nohup python ${REPO_DIR}/app.py > ${LOG_FILE} 2>&1 &
+                    nohup python app.py > ${LOG_FILE} 2>&1 &
                     sleep 5
                 """
             }
@@ -45,10 +44,11 @@ pipeline {
 
         stage('Run Selenium Tests') {
             steps {
+                echo 'Running Selenium tests against live app...'
                 catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
                     sh """
                         source ${VENV_DIR}/bin/activate
-                        python -m unittest discover ${REPO_DIR}/test_app
+                        python -m unittest discover test_app
                     """
                 }
             }
