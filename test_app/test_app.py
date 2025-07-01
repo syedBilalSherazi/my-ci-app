@@ -1,8 +1,10 @@
 import unittest
 import time
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
+from webdriver_manager.chrome import ChromeDriverManager
 
 class FlaskAppTest(unittest.TestCase):
     @classmethod
@@ -11,7 +13,11 @@ class FlaskAppTest(unittest.TestCase):
         options.add_argument("--headless")
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
-        cls.driver = webdriver.Chrome(options=options)
+
+        # FIX: use webdriver_manager to install the driver
+        service = Service(ChromeDriverManager().install())
+        cls.driver = webdriver.Chrome(service=service, options=options)
+
         cls.driver.implicitly_wait(5)
         cls.base_url = "http://127.0.0.1:5000"
 
