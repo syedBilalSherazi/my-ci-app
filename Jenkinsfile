@@ -23,6 +23,16 @@ pipeline {
             }
         }
 
+        stage('Start Flask App') {
+            steps {
+                sh '''
+                    source ${VENV_DIR}/bin/activate
+                    nohup python3 app.py > flask.log 2>&1 &
+                    sleep 10
+                '''
+            }
+        }
+
         stage('Run Tests') {
             steps {
                 sh '''
@@ -40,15 +50,21 @@ pipeline {
     }
 
     post {
+        always {
+            // Optionally kill the Flask app after tests
+            sh "pkill -f app.py || true"
+        }
+
         success {
             mail to: 'syedbilalsherazi1004@gmail.com',
                  subject: "Jenkins Build Success: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                  body: "Good news! The build succeeded.\n\nJob: ${env.JOB_NAME}\nBuild: ${env.BUILD_NUMBER}\nURL: ${env.BUILD_URL}"
         }
+
         failure {
             mail to: 'syedbilalsherazi1004@gmail.com',
                  subject: "Jenkins Build Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                 body: "The build failed.\n\nJob: ${env.JOB_NAME}\nBuild: ${env.BUILD_NUMBER}\nURL: ${env.BUILD_URL}"
+                 body: "The build failed.\n\nJob: ${env.JOB_NAME}\nBuild: ${env.BUILD_NUMBER}\nURL: ${env.BUILD_URL}\n\nFlask logs:\n$(cat flask.log)"
         }
     }
 }

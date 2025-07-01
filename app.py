@@ -17,6 +17,7 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(150), nullable=False)
 
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
@@ -32,14 +33,21 @@ def register():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
+
+        if not username or not password:
+            flash('Username and password required')
+            return redirect(url_for('register'))
+
         if User.query.filter_by(username=username).first():
             flash('Username already exists!')
             return redirect(url_for('register'))
+
         new_user = User(username=username, password=password)
         db.session.add(new_user)
         db.session.commit()
         flash('Registered successfully! Please log in.')
         return redirect(url_for('login'))
+
     return render_template('register.html')
 
 
@@ -48,13 +56,15 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
+
         user = User.query.filter_by(username=username, password=password).first()
         if user:
             login_user(user)
             return redirect(url_for('profile'))
         else:
-            flash('Invalid credentials')
+            flash('Invalid username or password')
             return redirect(url_for('login'))
+
     return render_template('login.html')
 
 
@@ -76,4 +86,4 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     print("Starting Flask app...")
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=False)
