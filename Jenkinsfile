@@ -43,17 +43,17 @@ pipeline {
 
         stage('Run Selenium Tests') {
             steps {
-                echo 'Running tests...'
+                echo 'Running Selenium tests against live app...'
+                // We want the build to fail if tests fail, but app stays running
                 sh """
                     source ${VENV_DIR}/bin/activate
-                    python -m unittest discover test_app || true
+                    python -m unittest discover test_app
                 """
             }
         }
 
-        stage('Archive Results') {
+        stage('Archive Logs') {
             steps {
-                junit 'report.xml'
                 archiveArtifacts artifacts: 'flask.log', onlyIfSuccessful: false
             }
         }
@@ -63,11 +63,12 @@ pipeline {
         always {
             mail to: 'syedbilalsherazi1004@gmail.com',
                  subject: "📦 Jenkins Build Complete: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                 body: """The build completed (even if tests failed).
+                 body: """The Jenkins build has completed.
 
 Job: ${env.JOB_NAME}
 Build: ${env.BUILD_NUMBER}
-URL: ${env.BUILD_URL}"""
+URL: ${env.BUILD_URL}
+"""
         }
     }
 }
