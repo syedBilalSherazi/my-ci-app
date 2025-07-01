@@ -17,7 +17,7 @@ class FlaskAppTest(unittest.TestCase):
         service = Service(ChromeDriverManager().install())
         cls.driver = webdriver.Chrome(service=service, options=options)
         cls.driver.implicitly_wait(5)
-        cls.base_url = "http://127.0.0.1:5000"
+        cls.base_url = "http://16.171.31.221:5000"
 
     @classmethod
     def tearDownClass(cls):
