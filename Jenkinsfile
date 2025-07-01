@@ -37,7 +37,7 @@ pipeline {
             steps {
                 sh '''
                     source ${VENV_DIR}/bin/activate
-                    python -m unittest discover tests/
+                    sh 'python -m unittest discover test_app'
                 '''
             }
         }
