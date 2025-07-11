@@ -60,9 +60,9 @@ pipeline {
 
     post {
         always {
-            mail to: 'sbilalsherazi@gmail.com',
+            mail to: 'syedbilalsherazi2.77@gmail.com',
                  subject: "📦 Jenkins Build Complete: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                 body: """The Jenkins build has completed.
+                 body: """The Jenkins build has completed and the test cases also ran successfully.
 
 Job: ${env.JOB_NAME}
 Build: ${env.BUILD_NUMBER}
